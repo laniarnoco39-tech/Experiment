@@ -148,37 +148,30 @@
     // 2. Define the function
     async function loadSlides() {
         const target = document.getElementById('slides-target');
-        let i = 1;
-        let imagesFound = true;
 
-        while (imagesFound) {
-            // This line handles 001-099 and 100+ automatically
-            let filename = (i < 100) ? i.toString().padStart(3, '0') + ".jpg" : i.toString() + ".jpg";
+        for (let i = 1; i <=999; i++) {
+            // padStart(3) makes 1 -> "001", 10 -> "010", 100 -> "100"
+            let filename = i.toString().padStart(3, '0') + ".jpg";
 
             // We "check" if the image exists before adding it
             try {
                 const resp = await fetch(filename, { method: 'HEAD' });
                 if (resp.ok) {
-                    console.log("Found an image!"); // Check F12 console
                     const slideDiv = document.createElement('div');
                     slideDiv.className = "mySlides fade";
                     slideDiv.innerHTML = `
-                        <div class="numbertext">${i}</div> / ${document.getElementsByClassName('mySlides').length + 1}</div>
+                        <div class="numbertext">${i}</div>
                         <img src="${filename}" style="width:100%">`;
                     target.insertBefore(slideDiv, target.querySelector('.prev'));
-                    i++;
-                } else {
-                    imagesFound = false; // Stop when a number is missing
                 }
             } catch (e) {
-                imagesFound = false;
+                console.log("Skipping: " + filename);
             }
         }
 
-    // Start the slideshow when the page load
-    showSlides(slideIndex);
-    startTimer();
-
+        // Start the slideshow when the page load
+        showSlides(slideIndex);
+        startTimer();
     }
 
     // 3. Call the loader LAST
