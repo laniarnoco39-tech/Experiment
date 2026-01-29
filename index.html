@@ -138,101 +138,125 @@
 </div>
 
 <script>
-    // 1. Variables
-    let slideIndex = 1;
-    let timer;
-    let currentSpeed = 2000;
-    let isPlaying = true;
 
-    // 2. The Loader
-    async function loadSlides() {
-        const target = document.getElementById('slides-target');
-        
-        // Changed to 150 for better performance on GitHub
-        for (let i = 1; i <= 150; i++) {
-            let filename = i.toString().padStart(3, '0') + ".jpg";
+// 1. Define the variables
+let slideIndex = 1;
+let timer; 
+let currentSpeed = 2000; 
+let isPlaying = true; 
 
-            try {
-                // We use 'fetch' to see if the image exists
-                const resp = await fetch(filename);
-                if (resp.ok) {
-                    const slideDiv = document.createElement('div');
-                    slideDiv.className = "mySlides fade";
-                    // Simplified HTML to prevent tag errors
-                    slideDiv.innerHTML = `
-                        <div class="numbertext">${i}</div>
-                        <img src="${filename}" style="width:100%">`;
-                    
-                    target.insertBefore(slideDiv, target.querySelector('.prev'));
-                    
-                    // If this is the VERY first image found, show it immediately
-                    if (document.getElementsByClassName("mySlides").length === 1) {
-                        showSlides(1);
-                    }
-                }
-            } catch (e) {
-                console.log("Error checking " + filename);
+// 2. The image loader function
+async function loadSlides() {
+    const target = document.getElementById('slides-target');
+
+    // Loops up to 150 (adjust if you have more images)
+    for (let i = 1; i <= 150; i++) {
+        // Prepare both potential naming styles
+        let file3 = i.toString().padStart(3, '0') + ".jpg"; // e.g., 101.jpg
+        let file4 = i.toString().padStart(4, '0') + ".jpg"; // e.g., 0101.jpg
+
+        try {
+            // First attempt to fetch the 3-digit filename
+            let resp = await fetch(file3);
+            let filename = file3;
+
+            // If 3-digit doesn't exist, try the 4-digit version
+            if (!resp.ok) {
+                resp = await fetch(file4);
+                filename = file4;
             }
-        }
-        // Start the automatic timer only after the loop starts finding things
-        startTimer();
-    }
 
-    // 3. Start the process
-    loadSlides();
-
-    function startTimer() {
-        if (isPlaying && !timer) { 
-            timer = setInterval(function() {
-                plusSlides(1);
-            }, currentSpeed);
-        }
-    }
-
-    function togglePlayPause() {
-        const btn = document.getElementById("playPauseBtn");
-        if (isPlaying) {
-            clearInterval(timer);
-            timer = null;
-            btn.innerHTML = "&#9658;";
-            isPlaying = false;
-        } else {
-            isPlaying = true;
-            btn.innerHTML = "||";
-            startTimer();
+            // If either version is found, build the slide
+            if (resp.ok) {
+                const slideDiv = document.createElement('div');
+                slideDiv.className = "mySlides fade";
+                slideDiv.innerHTML = `
+                    <div class="numbertext">${i}</div>
+                    <img src="${filename}" style="width:100%">`;
+                
+                // Insert the new slide before the "prev" button
+                target.insertBefore(slideDiv, target.querySelector('.prev'));
+                
+                // Show the very first image as soon as it arrives
+                if (document.getElementsByClassName("mySlides").length === 1) {
+                    showSlides(1);
+                }
+            }
+        } catch (e) {
+            console.log("Network error checking image " + i);
         }
     }
+    // Start auto-playback only after the loop has started finding images
+    startTimer();
+}
 
-    function changeSpeed() {
-        const dropdown = document.getElementById("speed");
-        currentSpeed = parseInt(dropdown.value);
-        if (isPlaying) {
-            clearInterval(timer);
-            timer = null;
-            startTimer();
-        }
+// 3. Kick off the loading process
+loadSlides();
+
+// 4. Timer Logic
+function startTimer() {
+    // Only start if playing and there isn't an active timer already
+    if (isPlaying && !timer) { 
+        timer = setInterval(function() {
+            plusSlides(1);
+        }, currentSpeed);
     }
+}
 
-    function plusSlides(n) {
+// 5. Play/Pause Control
+function togglePlayPause() {
+    const btn = document.getElementById("playPauseBtn");
+    if (isPlaying) {
         clearInterval(timer);
         timer = null;
-        showSlides(slideIndex += n);
-        if (isPlaying) startTimer();
+        btn.innerHTML = "&#9658;"; // Play icon
+        isPlaying = false;
+    } else {
+        isPlaying = true;
+        btn.innerHTML = "||"; // Pause icon
+        startTimer();
+    }
+}
+
+// 6. Speed Control
+function changeSpeed() {
+    const dropdown = document.getElementById("speed");
+    currentSpeed = parseInt(dropdown.value);
+
+    if (isPlaying) {
+        clearInterval(timer);
+        timer = null;
+        startTimer();
+    }
+}
+
+// 7. Navigation (Next/Prev)
+function plusSlides(n) {
+    clearInterval(timer);
+    timer = null;
+    showSlides(slideIndex += n);
+    if (isPlaying) startTimer();
+}
+
+// 8. The Display Engine
+function showSlides(n) {
+    let slides = document.getElementsByClassName("mySlides");
+    
+    // Stop if no images have been loaded into the HTML yet
+    if (slides.length === 0) return;
+
+    if (n > slides.length) {slideIndex = 1}
+    if (n < 1) {slideIndex = slides.length}
+
+    // Hide all slides
+    for (let i = 0; i < slides.length; i++) {
+        slides[i].style.display = "none";
     }
 
-    function showSlides(n) {
-        let slides = document.getElementsByClassName("mySlides");
-        if (slides.length === 0) return; // Exit if no images found yet
+    // Show the active slide
+    slides[slideIndex-1].style.display = "block";
+}
 
-        if (n > slides.length) {slideIndex = 1}
-        if (n < 1) {slideIndex = slides.length}
-
-        for (let i = 0; i < slides.length; i++) {
-            slides[i].style.display = "none";
-        }
-        slides[slideIndex-1].style.display = "block";
-    }
 </script>
-
 </body>
 </html>
