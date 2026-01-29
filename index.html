@@ -138,48 +138,51 @@
 </div>
 
 <script>
-
-    // 1. Define the variables First
+    // 1. Variables
     let slideIndex = 1;
-    let timer; // Variable to store the timer
-    let currentSpeed = 2000; // This variable now control the timing
-    let isPlaying = true; // Tracks the state
+    let timer;
+    let currentSpeed = 2000;
+    let isPlaying = true;
 
-    // 2. Define the function
+    // 2. The Loader
     async function loadSlides() {
         const target = document.getElementById('slides-target');
-
-        for (let i = 1; i <=100; i++) {
-            // padStart(3) makes 1 -> "001", 10 -> "010", 100 -> "100"
+        
+        // Changed to 150 for better performance on GitHub
+        for (let i = 1; i <= 150; i++) {
             let filename = i.toString().padStart(3, '0') + ".jpg";
 
-            // We "check" if the image exists before adding it
             try {
-                const resp = await fetch(filename, { method: 'HEAD' });
+                // We use 'fetch' to see if the image exists
+                const resp = await fetch(filename);
                 if (resp.ok) {
                     const slideDiv = document.createElement('div');
                     slideDiv.className = "mySlides fade";
+                    // Simplified HTML to prevent tag errors
                     slideDiv.innerHTML = `
                         <div class="numbertext">${i}</div>
                         <img src="${filename}" style="width:100%">`;
+                    
                     target.insertBefore(slideDiv, target.querySelector('.prev'));
+                    
+                    // If this is the VERY first image found, show it immediately
+                    if (document.getElementsByClassName("mySlides").length === 1) {
+                        showSlides(1);
+                    }
                 }
             } catch (e) {
-                console.log("Skipping: " + filename);
+                console.log("Error checking " + filename);
             }
         }
-
-        // Start the slideshow when the page load
-        showSlides(slideIndex);
+        // Start the automatic timer only after the loop starts finding things
         startTimer();
     }
 
-    // 3. Call the loader LAST
+    // 3. Start the process
     loadSlides();
 
-    // 4. Updated this to use 'currentSpeed' instead of a hardcoded 5000
     function startTimer() {
-        if (isPlaying) { // Only start if we aren't paused
+        if (isPlaying && !timer) { 
             timer = setInterval(function() {
                 plusSlides(1);
             }, currentSpeed);
@@ -188,52 +191,47 @@
 
     function togglePlayPause() {
         const btn = document.getElementById("playPauseBtn");
-
         if (isPlaying) {
-           // STOP the slideshow
-           clearInterval(timer);
-           btn.innerHTML = "&#9658;"; // Change "||" to a Play triangle
-           isPlaying = false;
+            clearInterval(timer);
+            timer = null;
+            btn.innerHTML = "&#9658;";
+            isPlaying = false;
         } else {
-           // RESUME the slideshow
-           isPlaying = true;
-           btn.innerHTML = "||"; // Change back to Pause bars
-           startTimer();
-        }
-    }
-
-    // 5. Added NEW function to handle the dropdown change
-    function changeSpeed() {
-        const dropdown = document.getElementById("speed");
-        currentSpeed = parseInt(dropdown.value); // Updates the variable
-
-        if (isPlaying) {
-            clearInterval(timer); // Reset the click
+            isPlaying = true;
+            btn.innerHTML = "||";
             startTimer();
         }
     }
 
-    // Controls for Next/Prev
+    function changeSpeed() {
+        const dropdown = document.getElementById("speed");
+        currentSpeed = parseInt(dropdown.value);
+        if (isPlaying) {
+            clearInterval(timer);
+            timer = null;
+            startTimer();
+        }
+    }
+
     function plusSlides(n) {
-        clearInterval(timer); // Stop the current timer
+        clearInterval(timer);
+        timer = null;
         showSlides(slideIndex += n);
-        if (isPlaying) startTimer(); // Only restart timer if it wasn't paused
+        if (isPlaying) startTimer();
     }
 
     function showSlides(n) {
-        let i;
         let slides = document.getElementsByClassName("mySlides");
+        if (slides.length === 0) return; // Exit if no images found yet
 
         if (n > slides.length) {slideIndex = 1}
         if (n < 1) {slideIndex = slides.length}
 
-        for (i=0; i < slides.length; i++) {
+        for (let i = 0; i < slides.length; i++) {
             slides[i].style.display = "none";
         }
-
         slides[slideIndex-1].style.display = "block";
-     }
-
+    }
 </script>
 
 </body>
