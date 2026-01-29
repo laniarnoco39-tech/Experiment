@@ -136,55 +136,46 @@
     let currentSpeed = 2000; 
     let isPlaying = true; 
 
-    // 2. The image loader function
     async function loadSlides() {
-        const target = document.getElementById('slides-target');
+    const target = document.getElementById('slides-target');
 
-        // Increase 150 to a higher number if you have more photos
-        for (let i = 1; i <= 150; i++) {
-            // Check for 101.jpg, 0101.jpg, and uppercase 101.JPG
-            let file3 = i.toString().padStart(3, '0') + ".jpg";
-            let file4 = i.toString().padStart(4, '0') + ".jpg";
-            let fileUpper = i.toString().padStart(3, '0') + ".JPG";
+    for (let i = 1; i <= 150; i++) {
+        // This covers all your bases:
+        let versions = [
+            i.toString().padStart(3, '0') + ".jpg", // 001.jpg, 099.jpg, 102.jpg
+            i.toString().padStart(4, '0') + ".jpg", // 0001.jpg, 0102.jpg
+            i.toString().padStart(3, '0') + ".JPG", // 001.JPG (Uppercase)
+            i.toString() + ".jpg"                   // 1.jpg, 102.jpg
+        ];
 
+        let foundFile = null;
+
+        // Check each version until one works
+        for (let file of versions) {
             try {
-                let filename = null;
-                
-                // Try 3-digit style
-                let resp = await fetch(file3);
+                let resp = await fetch(file);
                 if (resp.ok) {
-                    filename = file3;
-                } else {
-                    // Try 4-digit style
-                    resp = await fetch(file4);
-                    if (resp.ok) {
-                        filename = file4;
-                    } else {
-                        // Try uppercase style
-                        resp = await fetch(fileUpper);
-                        if (resp.ok) filename = fileUpper;
-                    }
+                    foundFile = file;
+                    break; // Stop looking, we found it!
                 }
+            } catch (e) { continue; }
+        }
 
-                if (filename) {
-                    const slideDiv = document.createElement('div');
-                    slideDiv.className = "mySlides fade";
-                    slideDiv.innerHTML = `
-                        <div class="numbertext">${i}</div>
-                        <img src="${filename}" style="width:100%">`;
-                    
-                    target.insertBefore(slideDiv, target.querySelector('.prev'));
-                    
-                    // Show the first image immediately so the user isn't looking at a black box
-                    if (document.getElementsByClassName("mySlides").length === 1) {
-                        showSlides(1);
-                    }
-                }
-            } catch (e) {
-                console.log("Error checking " + i);
+        if (foundFile) {
+            const slideDiv = document.createElement('div');
+            slideDiv.className = "mySlides fade";
+            slideDiv.innerHTML = `
+                <div class="numbertext">${i}</div>
+                <img src="${foundFile}" style="width:100%">`;
+            
+            target.insertBefore(slideDiv, target.querySelector('.prev'));
+            
+            if (document.getElementsByClassName("mySlides").length === 1) {
+                showSlides(1);
             }
         }
-        startTimer();
+    }
+    startTimer();
     }
 
     // 3. Kick off the loading
