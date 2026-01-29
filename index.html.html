@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple HTML Slideshow</title>
+    <title>Ate's Gallery</title>
     <style>
         * {box-sizing: border-box}
-        body {font-family: sans-serif; margin:0}
+        body {font-family: sans-serif; margin:0; background-color: #f4f4f4;}
 
         /* Slideshow container */
         .slideshow-container {
@@ -16,6 +16,8 @@
             overflow: hidden;
             border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            background-color: #000;
+            margin-top: 20px;
         }
 
         /* Hide images by default */
@@ -27,8 +29,8 @@
             vertical-align: middle;
             width: 100%;
             height: 450px;
-            object-fit: contain; /* Shows the full image, adds letterboxing if needed */
-            background-color: #000; /* Optional: adds a black background to empty space*/
+            object-fit: contain; 
+            background-color: #000;
         }
 
         /* Next & previous buttons */
@@ -46,15 +48,9 @@
             border-radius: 0 3px 3px 0;
             user-select: none;
             background-color: rgba(0,0,0,0.3);
+            z-index: 10;
         }
 
-        /* Specific to the Prev button */
-        .prev {
-            left: 0;
-            border-radius: 0 3px 3px 0;
-        }
-
-        /* Specific to the next button */
         .next {
             right: 0;
             border-radius: 3px 0 0 3px;
@@ -71,13 +67,13 @@
             padding: 8px 12px;
             position: absolute;
             top: 0;
+            background: rgba(0,0,0,0.3);
         }
 
         /* Fading animation */
         .fade {
             animation-name: fade;
             animation-duration: 1.5s;
-
         }
 
         @keyframes fade {
@@ -97,22 +93,18 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            z-index: 10; /* Ensure it stays above the images */
-            opacity: 0; /*Faint by default */
-            transition: opacity 0.3s, background 0.3s;
+            z-index: 11;
+            opacity: 0;
+            transition: opacity 0.3s;
             outline: none;
-            pointer-events: none; /* Prevents the invisible button from blocking clicks */
         }
 
-        /* Make it more visible when the mouse is over the slideshow */
         .slideshow-container:hover .play-pause-btn {
             opacity: 1;
-            pointer-events: auto; /* Re-enables clicking when visible */
         }
 
         .play-pause-btn:hover {
             background-color: rgba(0,0,0,0.9);
-            opacity: 1 !important; /*Fully visible when directly hovered */
         }
     </style>
 </head>
@@ -138,125 +130,116 @@
 </div>
 
 <script>
+    // 1. Variables
+    let slideIndex = 1;
+    let timer; 
+    let currentSpeed = 2000; 
+    let isPlaying = true; 
 
-// 1. Define the variables
-let slideIndex = 1;
-let timer; 
-let currentSpeed = 2000; 
-let isPlaying = true; 
+    // 2. The image loader function
+    async function loadSlides() {
+        const target = document.getElementById('slides-target');
 
-// 2. The image loader function
-async function loadSlides() {
-    const target = document.getElementById('slides-target');
+        // Increase 150 to a higher number if you have more photos
+        for (let i = 1; i <= 150; i++) {
+            // Check for 101.jpg, 0101.jpg, and uppercase 101.JPG
+            let file3 = i.toString().padStart(3, '0') + ".jpg";
+            let file4 = i.toString().padStart(4, '0') + ".jpg";
+            let fileUpper = i.toString().padStart(3, '0') + ".JPG";
 
-    // Loops up to 150 (adjust if you have more images)
-    for (let i = 1; i <= 150; i++) {
-        // Prepare both potential naming styles
-        let file3 = i.toString().padStart(3, '0') + ".jpg"; // e.g., 101.jpg
-        let file4 = i.toString().padStart(4, '0') + ".jpg"; // e.g., 0101.jpg
-
-        try {
-            // First attempt to fetch the 3-digit filename
-            let resp = await fetch(file3);
-            let filename = file3;
-
-            // If 3-digit doesn't exist, try the 4-digit version
-            if (!resp.ok) {
-                resp = await fetch(file4);
-                filename = file4;
-            }
-
-            // If either version is found, build the slide
-            if (resp.ok) {
-                const slideDiv = document.createElement('div');
-                slideDiv.className = "mySlides fade";
-                slideDiv.innerHTML = `
-                    <div class="numbertext">${i}</div>
-                    <img src="${filename}" style="width:100%">`;
+            try {
+                let filename = null;
                 
-                // Insert the new slide before the "prev" button
-                target.insertBefore(slideDiv, target.querySelector('.prev'));
-                
-                // Show the very first image as soon as it arrives
-                if (document.getElementsByClassName("mySlides").length === 1) {
-                    showSlides(1);
+                // Try 3-digit style
+                let resp = await fetch(file3);
+                if (resp.ok) {
+                    filename = file3;
+                } else {
+                    // Try 4-digit style
+                    resp = await fetch(file4);
+                    if (resp.ok) {
+                        filename = file4;
+                    } else {
+                        // Try uppercase style
+                        resp = await fetch(fileUpper);
+                        if (resp.ok) filename = fileUpper;
+                    }
                 }
+
+                if (filename) {
+                    const slideDiv = document.createElement('div');
+                    slideDiv.className = "mySlides fade";
+                    slideDiv.innerHTML = `
+                        <div class="numbertext">${i}</div>
+                        <img src="${filename}" style="width:100%">`;
+                    
+                    target.insertBefore(slideDiv, target.querySelector('.prev'));
+                    
+                    // Show the first image immediately so the user isn't looking at a black box
+                    if (document.getElementsByClassName("mySlides").length === 1) {
+                        showSlides(1);
+                    }
+                }
+            } catch (e) {
+                console.log("Error checking " + i);
             }
-        } catch (e) {
-            console.log("Network error checking image " + i);
+        }
+        startTimer();
+    }
+
+    // 3. Kick off the loading
+    loadSlides();
+
+    // 4. Navigation & Timer Logic
+    function startTimer() {
+        if (isPlaying && !timer) { 
+            timer = setInterval(() => plusSlides(1), currentSpeed);
         }
     }
-    // Start auto-playback only after the loop has started finding images
-    startTimer();
-}
 
-// 3. Kick off the loading process
-loadSlides();
-
-// 4. Timer Logic
-function startTimer() {
-    // Only start if playing and there isn't an active timer already
-    if (isPlaying && !timer) { 
-        timer = setInterval(function() {
-            plusSlides(1);
-        }, currentSpeed);
+    function togglePlayPause() {
+        const btn = document.getElementById("playPauseBtn");
+        if (isPlaying) {
+            clearInterval(timer);
+            timer = null;
+            btn.innerHTML = "&#9658;"; 
+            isPlaying = false;
+        } else {
+            isPlaying = true;
+            btn.innerHTML = "||"; 
+            startTimer();
+        }
     }
-}
 
-// 5. Play/Pause Control
-function togglePlayPause() {
-    const btn = document.getElementById("playPauseBtn");
-    if (isPlaying) {
+    function changeSpeed() {
+        currentSpeed = parseInt(document.getElementById("speed").value);
+        if (isPlaying) {
+            clearInterval(timer);
+            timer = null;
+            startTimer();
+        }
+    }
+
+    function plusSlides(n) {
         clearInterval(timer);
         timer = null;
-        btn.innerHTML = "&#9658;"; // Play icon
-        isPlaying = false;
-    } else {
-        isPlaying = true;
-        btn.innerHTML = "||"; // Pause icon
-        startTimer();
-    }
-}
-
-// 6. Speed Control
-function changeSpeed() {
-    const dropdown = document.getElementById("speed");
-    currentSpeed = parseInt(dropdown.value);
-
-    if (isPlaying) {
-        clearInterval(timer);
-        timer = null;
-        startTimer();
-    }
-}
-
-// 7. Navigation (Next/Prev)
-function plusSlides(n) {
-    clearInterval(timer);
-    timer = null;
-    showSlides(slideIndex += n);
-    if (isPlaying) startTimer();
-}
-
-// 8. The Display Engine
-function showSlides(n) {
-    let slides = document.getElementsByClassName("mySlides");
-    
-    // Stop if no images have been loaded into the HTML yet
-    if (slides.length === 0) return;
-
-    if (n > slides.length) {slideIndex = 1}
-    if (n < 1) {slideIndex = slides.length}
-
-    // Hide all slides
-    for (let i = 0; i < slides.length; i++) {
-        slides[i].style.display = "none";
+        showSlides(slideIndex += n);
+        if (isPlaying) startTimer();
     }
 
-    // Show the active slide
-    slides[slideIndex-1].style.display = "block";
-}
+    function showSlides(n) {
+        let slides = document.getElementsByClassName("mySlides");
+        if (slides.length === 0) return;
 
+        if (n > slides.length) {slideIndex = 1}
+        if (n < 1) {slideIndex = slides.length}
+
+        for (let i = 0; i < slides.length; i++) {
+            slides[i].style.display = "none";
+        }
+        slides[slideIndex-1].style.display = "block";
+    }
 </script>
+
 </body>
 </html>
