@@ -152,8 +152,8 @@
         let imagesFound = true;
 
         while (imagesFound) {
-            // This line handles the 001, 002, 003.... logic
-            let filename = i.toString().padStart(3, '0') + ".jpg";
+            // This line handles 001-099 and 100+ automatically
+            let filename = (i < 100) ? i.toString().padStart(3, '0') + ".jpg" : i.toString() + ".jpg";
 
             // We "check" if the image exists before adding it
             try {
