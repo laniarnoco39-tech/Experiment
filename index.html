@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple HTML Slideshow</title>
+    <style>
+        * {box-sizing: border-box}
+        body {font-family: sans-serif; margin:0}
+
+        /* Slideshow container */
+        .slideshow-container {
+            max-width: 800px;
+            position: relative;
+            margin: auto;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* Hide images by default */
+        .mySlides {
+            display: none;
+        }
+
+        img {
+            vertical-align: middle;
+            width: 100%;
+            height: 450px;
+            object-fit: contain; /* Shows the full image, adds letterboxing if needed */
+            background-color: #000; /* Optional: adds a black background to empty space*/
+        }
+
+        /* Next & previous buttons */
+        .prev, .next {
+            cursor: pointer;
+            position: absolute;
+            top: 50%;
+            width: auto;
+            margin-top: -22px;
+            padding: 16px;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            transition: 0.6s ease;
+            border-radius: 0 3px 3px 0;
+            user-select: none;
+            background-color: rgba(0,0,0,0.3);
+        }
+
+        /* Specific to the Prev button */
+        .prev {
+            left: 0;
+            border-radius: 0 3px 3px 0;
+        }
+
+        /* Specific to the next button */
+        .next {
+            right: 0;
+            border-radius: 3px 0 0 3px;
+        }
+
+        .prev:hover, .next:hover {
+            background-color: rgba(0,0,0,0.8);
+        }
+
+        /* Number text (1/3 etc) */
+        .numbertext {
+            color: #f2f2f2;
+            font-size: 12px;
+            padding: 8px 12px;
+            position: absolute;
+            top: 0;
+        }
+
+        /* Fading animation */
+        .fade {
+            animation-name: fade;
+            animation-duration: 1.5s;
+
+        }
+
+        @keyframes fade {
+            from {opacity: .4}
+            to {opacity: 1}
+        }
+
+        .play-pause-btn {
+            cursor: pointer;
+            background-color: rgba(0,0,0,0.5);
+            color: white;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 50%;
+            font-size: 30px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10; /* Ensure it stays above the images */
+            opacity: 0; /*Faint by default */
+            transition: opacity 0.3s, background 0.3s;
+            outline: none;
+            pointer-events: none; /* Prevents the invisible button from blocking clicks */
+        }
+
+        /* Make it more visible when the mouse is over the slideshow */
+        .slideshow-container:hover .play-pause-btn {
+            opacity: 1;
+            pointer-events: auto; /* Re-enables clicking when visible */
+        }
+
+        .play-pause-btn:hover {
+            background-color: rgba(0,0,0,0.9);
+            opacity: 1 !important; /*Fully visible when directly hovered */
+        }
+    </style>
+</head>
+<body>
+
+<h2 style="text-align:center; margin-top:20px;">Ate's Gallery</h2>
+
+<div style="text-align:center; margin-bottom: 20px;">
+     <label for="speed">Slide Speed (seconds): </label>
+     <select id="speed" onchange="changeSpeed()">
+         <option value="2000" selected>2</option>
+         <option value="3000">3</option>
+         <option value="4000">4</option>
+         <option value="5000">5</option>
+     </select>
+</div>
+
+<div class="slideshow-container" id="slides-target">
+    <button id="playPauseBtn" class="play-pause-btn" onclick="togglePlayPause()">||</button>
+
+    <a class="prev" onclick="plusSlides(-1)">&#10094;</a>
+    <a class="next" onclick="plusSlides(1)">&#10095;</a>
+</div>
+
+<script>
+
+    // 1. Define the variables First
+    let slideIndex = 1;
+    let timer; // Variable to store the timer
+    let currentSpeed = 2000; // This variable now control the timing
+    let isPlaying = true; // Tracks the state
+
+    // 2. Define the function
+    async function loadSlides() {
+        const target = document.getElementById('slides-target');
+        let i = 1;
+        let imagesFound = true;
+
+        while (imagesFound) {
+            // This line handles the 001, 002, 003.... logic
+            let filename = i.toString().padStart(3, '0') + ".jpg";
+
+            // We "check" if the image exists before adding it
+            try {
+                const resp = await fetch(filename, { method: 'HEAD' });
+                if (resp.ok) {
+                    console.log("Found an image!"); // Check F12 console
+                    const slideDiv = document.createElement('div');
+                    slideDiv.className = "mySlides fade";
+                    slideDiv.innerHTML = `
+                        <div class="numbertext">${i}</div> / ${document.getElementByClassName('mySlides').length + 1}</div>
+                        <img src="${filename}" style="width:100%">`;
+                    target.insertBefore(slideDiv, target.querySelector('.prev'));
+                    i++;
+                } else {
+                    imagesFound = false; // Stop when a number is missing
+                }
+            } catch (e) {
+                imagesFound = false;
+            }
+        }
+
+    // Start the slideshow when the page load
+    showSlides(slideIndex);
+    startTimer();
+
+    }
+
+    // 3. Call the loader LAST
+    loadSlides();
+
+    // 4. Updated this to use 'currentSpeed' instead of a hardcoded 5000
+    function startTimer() {
+        if (isPlaying) { // Only start if we aren't paused
+            timer = setInterval(function() {
+                plusSlides(1);
+            }, currentSpeed);
+        }
+    }
+
+    function togglePlayPause() {
+        const btn = document.getElementById("playPauseBtn");
+
+        if (isPlaying) {
+           // STOP the slideshow
+           clearInterval(timer);
+           btn.innerHTML = "&#9658;"; // Change "||" to a Play triangle
+           isPlaying = false;
+        } else {
+           // RESUME the slideshow
+           isPlaying = true;
+           btn.innerHTML = "||"; // Change back to Pause bars
+           startTimer();
+        }
+    }
+
+    // 5. Added NEW function to handle the dropdown change
+    function changeSpeed() {
+        const dropdown = document.getElementById("speed");
+        currentSpeed = parseInt(dropdown.value); // Updates the variable
+
+        if (isPlaying) {
+            clearInterval(timer); // Reset the click
+            startTimer();
+        }
+    }
+
+    // Controls for Next/Prev
+    function plusSlides(n) {
+        clearInterval(timer); // Stop the current timer
+        showSlides(slideIndex += n);
+        if (isPlaying) startTimer(); // Only restart timer if it wasn't paused
+    }
+
+    function showSlides(n) {
+        let i;
+        let slides = document.getElementsByClassName("mySlides");
+
+        if (n > slides.length) {slideIndex = 1}
+        if (n < 1) {slideIndex = slides.length}
+
+        for (i=0; i < slides.length; i++) {
+            slides[i].style.display = "none";
+        }
+
+        slides[slideIndex-1].style.display = "block";
+     }
+
+</script>
+
+</body>
+</html>
