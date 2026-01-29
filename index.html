@@ -163,7 +163,7 @@
                     const slideDiv = document.createElement('div');
                     slideDiv.className = "mySlides fade";
                     slideDiv.innerHTML = `
-                        <div class="numbertext">${i}</div> / ${document.getElementByClassName('mySlides').length + 1}</div>
+                        <div class="numbertext">${i}</div> / ${document.getElementsByClassName('mySlides').length + 1}</div>
                         <img src="${filename}" style="width:100%">`;
                     target.insertBefore(slideDiv, target.querySelector('.prev'));
                     i++;
