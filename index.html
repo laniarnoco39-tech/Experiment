@@ -5,87 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ate's Gallery</title>
     <style>
+        /* CSS remains largely the same, added a loader style */
         * {box-sizing: border-box}
-        body {font-family: sans-serif; margin:0; background-color: #f4f4f4;}
-
-        /* Slideshow container */
+        body {font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin:0; background-color: #1a1a1a; color: white;}
+        
         .slideshow-container {
-            max-width: 800px;
+            max-width: 900px;
             position: relative;
-            margin: auto;
+            margin: 20px auto;
             overflow: hidden;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border-radius: 12px;
             background-color: #000;
-            margin-top: 20px;
+            aspect-ratio: 16 / 9; /* Keeps a consistent shape while loading */
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        /* Hide images by default */
-        .mySlides {
-            display: none;
-        }
-
+        .mySlides { display: none; width: 100%; height: 100%; }
+        
         img {
-            vertical-align: middle;
             width: 100%;
-            height: 450px;
+            height: 100%;
             object-fit: contain; 
-            background-color: #000;
         }
 
-        /* Next & previous buttons */
         .prev, .next {
             cursor: pointer;
             position: absolute;
             top: 50%;
-            width: auto;
-            margin-top: -22px;
-            padding: 16px;
+            transform: translateY(-50%);
+            padding: 20px;
             color: white;
             font-weight: bold;
-            font-size: 18px;
-            transition: 0.6s ease;
-            border-radius: 0 3px 3px 0;
-            user-select: none;
-            background-color: rgba(0,0,0,0.3);
+            font-size: 24px;
+            background-color: rgba(0,0,0,0.4);
+            transition: 0.3s;
             z-index: 10;
+            text-decoration: none;
         }
+        .next { right: 0; border-radius: 5px 0 0 5px; }
+        .prev { left: 0; border-radius: 0 5px 5px 0; }
+        .prev:hover, .next:hover { background-color: rgba(255,255,255,0.2); }
 
-        .next {
-            right: 0;
-            border-radius: 3px 0 0 3px;
-        }
-
-        .prev:hover, .next:hover {
-            background-color: rgba(0,0,0,0.8);
-        }
-
-        /* Number text (1/3 etc) */
         .numbertext {
-            color: #f2f2f2;
-            font-size: 12px;
-            padding: 8px 12px;
             position: absolute;
-            top: 0;
-            background: rgba(0,0,0,0.3);
-        }
-
-        /* Fading animation */
-        .fade {
-            animation-name: fade;
-            animation-duration: 1.5s;
-        }
-
-        @keyframes fade {
-            from {opacity: .4}
-            to {opacity: 1}
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.6);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
         }
 
         .play-pause-btn {
             cursor: pointer;
-            background-color: rgba(0,0,0,0.5);
+            background-color: rgba(255,255,255,0.2);
             color: white;
-            padding: 15px 25px;
+            padding: 20px;
             border: none;
             border-radius: 50%;
             font-size: 30px;
@@ -95,93 +72,94 @@
             transform: translate(-50%, -50%);
             z-index: 11;
             opacity: 0;
-            transition: opacity 0.3s;
-            outline: none;
+            transition: 0.3s;
+            backdrop-filter: blur(5px);
         }
-
-        .slideshow-container:hover .play-pause-btn {
-            opacity: 1;
-        }
-
-        .play-pause-btn:hover {
-            background-color: rgba(0,0,0,0.9);
-        }
+        .slideshow-container:hover .play-pause-btn { opacity: 1; }
     </style>
 </head>
 <body>
 
-<h2 style="text-align:center; margin-top:20px;">Ate's Gallery</h2>
+<h2 style="text-align:center;">Ate's Gallery</h2>
 
 <div style="text-align:center; margin-bottom: 20px;">
-     <label for="speed">Slide Speed (seconds): </label>
-     <select id="speed" onchange="changeSpeed()">
-         <option value="2000" selected>2</option>
-         <option value="3000">3</option>
-         <option value="4000">4</option>
-         <option value="5000">5</option>
+     <label>Speed: </label>
+     <select id="speed" onchange="changeSpeed()" style="padding: 5px; border-radius: 5px;">
+         <option value="2000">2s</option>
+         <option value="3000" selected>3s</option>
+         <option value="5000">5s</option>
      </select>
 </div>
 
 <div class="slideshow-container" id="slides-target">
+    <div id="loading-msg">Scanning Gallery...</div>
     <button id="playPauseBtn" class="play-pause-btn" onclick="togglePlayPause()">||</button>
-
     <a class="prev" onclick="plusSlides(-1)">&#10094;</a>
     <a class="next" onclick="plusSlides(1)">&#10095;</a>
 </div>
 
 <script>
-    // 1. Variables
     let slideIndex = 1;
     let timer; 
-    let currentSpeed = 2000; 
+    let currentSpeed = 3000; 
     let isPlaying = true; 
+    const MAX_IMAGES = 650; 
 
-    async function loadSlides() {
-    const target = document.getElementById('slides-target');
+    function initGallery() {
+        const target = document.getElementById('slides-target');
+        const fragment = document.createDocumentFragment();
 
-    for (let i = 1; i <= 150; i++) {
-        // This covers all your bases:
-        let versions = [
-            i.toString().padStart(3, '0') + ".jpg", // 001.jpg, 099.jpg, 102.jpg
-            i.toString().padStart(4, '0') + ".jpg", // 0001.jpg, 0102.jpg
-            i.toString().padStart(3, '0') + ".JPG", // 001.JPG (Uppercase)
-            i.toString() + ".jpg"                   // 1.jpg, 102.jpg
-        ];
-
-        let foundFile = null;
-
-        // Check each version until one works
-        for (let file of versions) {
-            try {
-                let resp = await fetch(file);
-                if (resp.ok) {
-                    foundFile = file;
-                    break; // Stop looking, we found it!
-                }
-            } catch (e) { continue; }
-        }
-
-        if (foundFile) {
+        for (let i = 1; i <= MAX_IMAGES; i++) {
             const slideDiv = document.createElement('div');
-            slideDiv.className = "mySlides fade";
+            slideDiv.className = "mySlides";
+            
+            // This format handles 001.jpg. 
+            // NOTE: If your files are .JPG (caps), change it here!
+            const fileName = i.toString().padStart(3, '0') + ".jpg";
+
             slideDiv.innerHTML = `
-                <div class="numbertext">${i}</div>
-                <img src="${foundFile}" style="width:100%">`;
+                <div class="numbertext">${i} / ${MAX_IMAGES}</div>
+                <img src="${fileName}" 
+                     onerror="removeInvalidSlide(this)" 
+                     onload="markAsReady(this)">`;
             
-            target.insertBefore(slideDiv, target.querySelector('.prev'));
-            
-            if (document.getElementsByClassName("mySlides").length === 1) {
-                showSlides(1);
-            }
+            fragment.appendChild(slideDiv);
         }
-    }
-    startTimer();
+        
+        // Add all at once to the DOM (hidden)
+        target.appendChild(fragment);
+
+        // Start the show after a short delay to let browser probe files
+        setTimeout(() => {
+            document.getElementById('loading-msg').style.display = 'none';
+            showSlides(slideIndex);
+            startTimer();
+        }, 1000);
     }
 
-    // 3. Kick off the loading
-    loadSlides();
+    function removeInvalidSlide(imgElement) {
+        // If image fails, remove the whole slide container
+        imgElement.parentElement.remove();
+    }
 
-    // 4. Navigation & Timer Logic
+    function markAsReady(imgElement) {
+        // Just a helper to ensure the div is valid
+        imgElement.parentElement.classList.add('ready');
+    }
+
+    function showSlides(n) {
+        let slides = document.getElementsByClassName("mySlides");
+        if (slides.length === 0) return;
+
+        if (n > slides.length) {slideIndex = 1}
+        if (n < 1) {slideIndex = slides.length}
+
+        for (let i = 0; i < slides.length; i++) {
+            slides[i].style.display = "none";
+        }
+        slides[slideIndex-1].style.display = "block";
+    }
+
     function startTimer() {
         if (isPlaying && !timer) { 
             timer = setInterval(() => plusSlides(1), currentSpeed);
@@ -202,6 +180,15 @@
         }
     }
 
+    function plusSlides(n) {
+        showSlides(slideIndex += n);
+        if (isPlaying) {
+            clearInterval(timer);
+            timer = null;
+            startTimer();
+        }
+    }
+
     function changeSpeed() {
         currentSpeed = parseInt(document.getElementById("speed").value);
         if (isPlaying) {
@@ -211,25 +198,8 @@
         }
     }
 
-    function plusSlides(n) {
-        clearInterval(timer);
-        timer = null;
-        showSlides(slideIndex += n);
-        if (isPlaying) startTimer();
-    }
-
-    function showSlides(n) {
-        let slides = document.getElementsByClassName("mySlides");
-        if (slides.length === 0) return;
-
-        if (n > slides.length) {slideIndex = 1}
-        if (n < 1) {slideIndex = slides.length}
-
-        for (let i = 0; i < slides.length; i++) {
-            slides[i].style.display = "none";
-        }
-        slides[slideIndex-1].style.display = "block";
-    }
+    // Run on boot
+    initGallery();
 </script>
 
 </body>
